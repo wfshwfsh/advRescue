@@ -1,0 +1,32 @@
+# Launch network management applet
+nm-applet &
+
+# Start volume control applet (Debian 11+)
+volumeicon &
+
+# Start volume control applet (legacy)
+#volti &
+
+# Launch power manager daemon
+xfce4-power-manager &
+
+# Launch X11 VNC server with random password
+( pwgen -A 4 > /tmp/vncpasswd && x11vnc -bg -forever -quiet -display :0 -passwdfile /tmp/vncpasswd ) &
+
+# Set background image
+nitrogen --restore &
+
+# Start X11 compositor
+compton &
+
+# Start taskbar
+tint2 &
+
+# Start notification daemon
+( sleep 1 && /usr/lib/i386-linux-gnu/xfce4/notifyd/xfce4-notifyd ) &
+
+# Give user 'redo' access to the running X server
+xhost si:localuser:redo &
+
+# Launch the Redo application in Chromium
+( sleep 1 && sudo -u redo chromium --start-maximized --app=http://localhost ) &
