@@ -29,4 +29,7 @@ tint2 &
 xhost si:localuser:redo &
 
 # Launch the Redo application in Chromium
-( sleep 1 && sudo -u redo chromium --start-maximized --app=http://localhost ) &
+#( sleep 1 && sudo -u redo chromium --start-maximized --app=http://localhost ) &
+
+# Launch Terminal and do something
+( sleep 1 && lxterminal -e "/root/advRescue.sh; sleep 5" ) &
