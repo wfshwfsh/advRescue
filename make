@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Redo Rescue: Backup and Recovery Made Easy <redorescue.com>
-# Copyright (C) 2010-2023 Zebradots Software
+# Copyright (C) 2010-2020 Zebradots Software
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-VER=5.0.0
-BASE=bookworm
+VER=4.0.1
+BASE=bullseye
 ARCH=amd64
 ROOT=rootdir
 FILE=setup.sh
@@ -80,10 +80,7 @@ prepare() {
 			grub-efi-amd64-signed shim-signed mtools xorriso \
 			syslinux syslinux-common isolinux memtest86+
 		rm -rf $ROOT; mkdir -p $ROOT
-		debootstrap \
-			--arch=$ARCH \
-			--variant=minbase \
-			$BASE $ROOT
+		debootstrap --arch=$ARCH --variant=minbase $BASE $ROOT
 		tar zcvf $CACHE ./$ROOT	
 	fi
 
@@ -135,22 +132,18 @@ script_build() {
 	else
 		KERN="amd64"
 	fi
-	if [ "$BASE" == "bookworm" ]; then
-		# Bookworm-specific PHP version and packages
-		PHPV="8.2"
-		PKGS="chromium-common chromium-sandbox volumeicon-alsa exfatprogs"
-	elif [ "$BASE" == "bullseye" ]; then
+	if [ "$BASE" == "bullseye" ]; then
 		# Bullseye-specific PHP version and packages
 		PHPV="7.4"
-		PKGS="chromium-common chromium-sandbox volumeicon-alsa curlftpfs exfat-utils"
+		PKGS="chromium-common chromium-sandbox volumeicon-alsa"
 	elif [ "$BASE" == "buster" ]; then
 		# Buster uses PHP 7.3
 		PHPV="7.3"
-		PKGS="chromium-common chromium-sandbox volti obmenu curlftpfs exfat-utils"
+		PKGS="chromium-common chromium-sandbox volti obmenu"
 	else
 		# Stretch uses PHP 7.0
 		PHPV="7.0"
-		PKGS="volti obmenu curlftpfs exfat-utils"
+		PKGS="volti obmenu"
 	fi
 	cat >> $ROOT/$FILE <<EOL
 # Install packages
@@ -161,9 +154,11 @@ apt install --no-install-recommends --yes \
         vim-tiny pm-utils iptables-persistent iputils-ping net-tools wget \
 	openssh-client openssh-server rsync less \
 	\
-	xserver-xorg x11-xserver-utils xinit openbox obconf slim \
-	plymouth plymouth-themes compton dbus-x11 libnotify-bin xfce4-notifyd \
-	gir1.2-notify-0.7 tint2 nitrogen xfce4-appfinder xfce4-power-manager \
+	xserver-xorg x11-xserver-utils xinit slim openbox obconf \
+	plymouth plymouth-themes compton dbus-x11 libnotify-bin \
+	xfce4-notifyd \
+	gir1.2-notify-0.7 tint2 nitrogen \
+	xfce4-appfinder xfce4-power-manager \
 	gsettings-desktop-schemas lxrandr lxmenu-data lxterminal lxappearance \
 	network-manager-gnome gtk2-engines numix-gtk-theme gtk-theme-switch \
 	fonts-lato pcmanfm libfm-modules gpicview mousepad x11vnc pwgen \
@@ -172,10 +167,11 @@ apt install --no-install-recommends --yes \
 	beep laptop-detect os-prober discover lshw-gtk hdparm smartmontools \
 	nmap time lvm2 gparted gnome-disk-utility baobab gddrescue testdisk \
 	dosfstools ntfs-3g reiserfsprogs reiser4progs hfsutils jfsutils \
-	smbclient cifs-utils nfs-common sshfs partclone pigz yad f2fs-tools \
-	exfat-fuse btrfs-progs \
+	smbclient cifs-utils nfs-common curlftpfs sshfs partclone pigz yad \
+	f2fs-tools exfat-fuse exfat-utils btrfs-progs \
 	\
-	nginx php-fpm php-cli chromium $PKGS
+	nginx php-fpm php-cli chromium $PKGS \
+	jq at-spi2-core 
 
 # Modify /etc/issue banner
 perl -p -i -e 's/^D/Redo Rescue $VER\nBased on D/' /etc/issue
@@ -187,8 +183,8 @@ perl -p -i -e 's/^set compatible$/set nocompatible/g' /etc/vim/vimrc.tiny
 systemctl disable systemd-timesyncd.service
 
 # Disable SSH server and delete keys
-systemctl disable ssh
-rm -f /etc/ssh/ssh_host_*
+#systemctl disable ssh
+#rm -f /etc/ssh/ssh_host_*
 
 # Prevent chromium "save password" prompts
 mkdir -p /etc/chromium/policies/managed
@@ -250,8 +246,8 @@ script_add_nonfree() {
 	#
 	cat >> $ROOT/$FILE <<EOL
 echo "Adding non-free packages..."
-# Briefly activate repos to install non-free firmware packages
-perl -p -i -e 's/main$/main non-free non-free-firmware/' /etc/apt/sources.list
+# Briefly activate non-free repo to install non-free firmware packages
+perl -p -i -e 's/main$/main non-free/' /etc/apt/sources.list
 apt update --yes
 # WARNING: Wireless connections are NOT recommended for backup/restore!
 #
@@ -259,12 +255,13 @@ apt update --yes
 # make script to create a custom image.
 #
 apt install --yes \
-	firmware-linux-nonfree \
-	firmware-misc-nonfree \
-	firmware-amd-graphics \
-	amd64-microcode \
-	intel-microcode
-perl -p -i -e 's/ non-free non-free-firmware$//' /etc/apt/sources.list
+	firmware-linux-nonfree
+#	firmware-atheros \
+#	firmware-brcm80211 \
+#	firmware-iwlwifi \
+#	firmware-libertas \
+#	firmware-zd1211 \
+perl -p -i -e 's/ non-free$//' /etc/apt/sources.list
 apt update --yes
 EOL
 }
@@ -352,8 +349,12 @@ create_livefs() {
 	chroot $ROOT/ /bin/bash -c "chown -R www-data: /var/www/html"
 
 	# Enable startup of Redo monitor service
-	chroot $ROOT/ /bin/bash -c "chmod 644 /etc/systemd/system/redo.service"
-	chroot $ROOT/ /bin/bash -c "systemctl enable redo"
+	#chroot $ROOT/ /bin/bash -c "chmod 644 /etc/systemd/system/redo.service"
+	#chroot $ROOT/ /bin/bash -c "systemctl enable redo"
+
+	# Enable adv rescue service
+	chroot $ROOT/ /bin/bash -c "chmod 644 /etc/systemd/system/adv.service"
+	chroot $ROOT/ /bin/bash -c "systemctl enable adv"
 
 	# Update version number
 	echo $VER > $ROOT/var/www/html/VERSION
@@ -559,6 +560,14 @@ if [ "$ACTION" == "changes" ]; then
 	chroot_exec
 	create_livefs
 	create_iso
+fi
+
+if [ "$ACTION" == "overlay" ]; then
+        # Enter existing system to make changes
+        echo -e "$yel* Updating existing image.$off"
+        chroot_exec
+        create_livefs
+        create_iso
 fi
 
 if [ "$ACTION" == "boot" ]; then
