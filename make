@@ -352,10 +352,6 @@ create_livefs() {
 	#chroot $ROOT/ /bin/bash -c "chmod 644 /etc/systemd/system/redo.service"
 	#chroot $ROOT/ /bin/bash -c "systemctl enable redo"
 
-	# Enable adv rescue service
-	chroot $ROOT/ /bin/bash -c "chmod 644 /etc/systemd/system/adv.service"
-	chroot $ROOT/ /bin/bash -c "systemctl enable adv"
-
 	# Update version number
 	echo $VER > $ROOT/var/www/html/VERSION
 
