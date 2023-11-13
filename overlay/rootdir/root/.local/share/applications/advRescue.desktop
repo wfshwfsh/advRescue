@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
-Exec=lxterminal -e "/home/advRescue.sh; echo 'Done. Reboot in 5 seconds...'; sleep 5"
+Exec=lxterminal -e "/root/advRescue.sh; echo 'Done. Reboot in 5 seconds...'; sleep 5"
 Name=AdvRescue 
 Comment=Advantech Rescue
 Categories=Utility;

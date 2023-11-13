@@ -10,9 +10,9 @@ MNT_UBUNTU="/mnt/ubuntu"
 MNT_STORAGE="/mnt/storage"
 
 
-#CONF_FILE="/mnt/ubuntu/var/tmp_adv/.rescue_mission.conf"
-CONF_FILE=".rescue_mission.conf"
-
+CONF_FILE="/mnt/ubuntu/var/tmp_adv/.rescue_mission.json"
+#CONF_FILE=".rescue_mission.conf"
+RESULT_FILE="$MNT_STORAGE/.rescue_mission.json"
 
 
 ##### backup #####
@@ -77,7 +77,7 @@ function exec_init()
 	if [ "backup" == "$mission" ]; then
 		fetch_mbr "$MNT_STORAGE" "$disk"
 		fetch_sfd "$MNT_STORAGE" "$disk"
-    elif [ "restore" == "$mission" ]; then
+	elif [ "restore" == "$mission" ]; then
 		clear_mbr "sda"
 		restore_mbr "$MNT_STORAGE" "$disk"
 		restore_sfd "$MNT_STORAGE" "$disk"
@@ -202,7 +202,8 @@ function get_mission()
 function parse_mission_and_exec()
 {
 	json_conf=$1
-	
+	local start_time=$(date +%s)
+
 	# get mission: "backup" or "restore"
 	mission=$(echo $json_conf | jq -r ".mission")
 	type=$(echo $json_conf | jq -r ".type")
@@ -235,11 +236,38 @@ function parse_mission_and_exec()
 	done
 	
 	# add result tag
-	local ts=$(date +%Y%m%d-%H:%M:%S)
-	result=$(echo "$json_conf" | jq --arg ts "$ts" '. + {"finish_ts": $ts}')
+	local end_time=$(date +%s)
+	local dur=$((end_time - start_time))
+	result=$(echo "$json_conf" | jq --arg v "$dur" '. + {"duration_sec": $v}')
 	echo "$result" > $CONF_FILE
-	
+	echo "$result" > $RESULT_FILE
+
 	umount $MNT_STORAGE
+}
+
+function grub_switch()
+{
+	ubuntu_disk="$1"
+	boot_opt="$2"
+	mkdir $MNT_UBUNTU
+	mount $ubuntu_disk $MNT_UBUNTU
+	mount -o bind /dev $MNT_UBUNTU/dev
+	mount -o bind /dev/pts $MNT_UBUNTU/dev/pts
+	mount -o bind /proc $MNT_UBUNTU/proc
+	mount -o bind /run $MNT_UBUNTU/run
+	mount -o bind /sys $MNT_UBUNTU/sys
+
+	path="/mnt/ubuntu/etc/default/grub"
+	sed -i "s/GRUB_DEFAULT=.*$/GRUB_DEFAULT='$boot_opt'/" $path
+
+	chroot /mnt/ubuntu /bin/bash -c "update-grub"
+
+	umount $MNT_UBUNTU/dev/pts
+	umount $MNT_UBUNTU/dev
+	umount $MNT_UBUNTU/proc
+	umount $MNT_UBUNTU/run
+	umount $MNT_UBUNTU/sys
+	umount $MNT_UBUNTU
 }
 
 ### main start ###
@@ -247,6 +275,7 @@ echo "=== rescue begin ==="
 
 json_conf=$(get_mission)
 parse_mission_and_exec "$json_conf"
+grub_switch $DEV_UBUNTU "Ubuntu"
 
 echo "=== rescue end ==="
 
