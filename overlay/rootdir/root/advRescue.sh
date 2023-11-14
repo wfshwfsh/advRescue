@@ -12,10 +12,11 @@ MNT_STORAGE="/mnt/storage"
 
 CONF_FILE="/mnt/ubuntu/var/tmp_adv/.rescue_mission.json"
 #CONF_FILE=".rescue_mission.conf"
-RESULT_FILE="$MNT_STORAGE/.rescue_mission.json"
+RESULT_FILE="$MNT_STORAGE/.rescue_mission_""$mission.json"
 
 
 ##### backup #####
+
 function fetch_mbr()
 {
 	local storage=$1
@@ -130,7 +131,8 @@ function compose_backup_cmd()
 	local source="--source /dev/$src_dev --no_block_detail"
 	local compress="pigz --stdout"
 	local split="split --numeric-suffixes=1 --suffix-length=3 --additional-suffix=.img --bytes=4096M -"
-	local date=`date +%Y%m%d`
+	##local date=`date +%Y%m%d`
+	local date=""
 	local name="$date"__"$src_dev"_
 	local output_path="$dir/$name"
 	#echo $output_path
@@ -155,7 +157,8 @@ function compose_restore_cmd()
 	local decompress="pigz --decompress --stdout"
 	local restore_opt="--overwrite /dev/$dst_dev --no_block_detail"
 	
-	local date=`date +%Y%m%d`
+	local date=""
+	#local date=`date +%Y%m%d`
 	local name="$date"__"$dst_dev"_??*.img
 	local image_path="$dir/$name"
 	#echo $image_path
@@ -217,13 +220,14 @@ function parse_mission_and_exec()
 	echo "state: $state"
 	echo "Timestamp: $ts"
 	
+	
+	mkdir -p $MNT_STORAGE
+        mount "/dev/$storage" $MNT_STORAGE
+	
 	# system disk info backup/restore
 	exec_init "$mission" "$disk"
 	
 	# image backup/restore
-	mkdir -p $MNT_STORAGE
-	mount "/dev/$storage" $MNT_STORAGE
-	
 	local nof_src_disk=$(echo "$json_conf" | jq '.imagelist | length')
 	for ((i = 0; i < $nof_src_disk; i++));
 	do
@@ -239,9 +243,11 @@ function parse_mission_and_exec()
 	local end_time=$(date +%s)
 	local dur=$((end_time - start_time))
 	result=$(echo "$json_conf" | jq --arg v "$dur" '. + {"duration_sec": $v}')
+	mount $MNT_UBUNTU
 	echo "$result" > $CONF_FILE
 	echo "$result" > $RESULT_FILE
-
+	
+	umount $MNT_UBUNTU
 	umount $MNT_STORAGE
 }
 
