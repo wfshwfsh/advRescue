@@ -10,9 +10,9 @@ MNT_UBUNTU="/mnt/ubuntu"
 MNT_STORAGE="/mnt/storage"
 
 
-CONF_FILE="/mnt/ubuntu/var/tmp_adv/.rescue_mission.json"
+CONF_PATH="/mnt/ubuntu/var/tmp_adv"
+CONF_FILE="$CONF_PATH/.rescue_mission.json"
 #CONF_FILE=".rescue_mission.conf"
-RESULT_FILE="$MNT_STORAGE/.rescue_mission_""$mission.json"
 
 
 ##### backup #####
@@ -132,8 +132,7 @@ function compose_backup_cmd()
 	local compress="pigz --stdout"
 	local split="split --numeric-suffixes=1 --suffix-length=3 --additional-suffix=.img --bytes=4096M -"
 	##local date=`date +%Y%m%d`
-	local date=""
-	local name="$date"__"$src_dev"_
+	local name="$src_dev"_
 	local output_path="$dir/$name"
 	#echo $output_path
 	
@@ -157,9 +156,8 @@ function compose_restore_cmd()
 	local decompress="pigz --decompress --stdout"
 	local restore_opt="--overwrite /dev/$dst_dev --no_block_detail"
 	
-	local date=""
 	#local date=`date +%Y%m%d`
-	local name="$date"__"$dst_dev"_??*.img
+	local name="$dst_dev"_??*.img
 	local image_path="$dir/$name"
 	#echo $image_path
 	
@@ -178,8 +176,10 @@ function exec_partclone()
 	local storage=$5
 	
 	if [ "backup" == "$mission" ]; then
+		# clean disk
+		#mkfs.$fs $storage
 		# compress imagelist => save to storage
-        	do_backup=$(compose_backup_cmd "$fs" "$diskpart" "$storage")
+		do_backup=$(compose_backup_cmd "$fs" "$diskpart" "$storage")
 		#echo $do_backup
 		eval $do_backup
 	elif [ "restore" == "$mission" ]; then
@@ -220,10 +220,15 @@ function parse_mission_and_exec()
 	echo "state: $state"
 	echo "Timestamp: $ts"
 	
-	
-	mkdir -p $MNT_STORAGE
+	#Checking Params 
+	if [ "restore" != "$mission" || "backup" != "$mission"]; then
+		return -1
+	fi
+
+
+        mkdir -p $MNT_STORAGE
         mount "/dev/$storage" $MNT_STORAGE
-	
+
 	# system disk info backup/restore
 	exec_init "$mission" "$disk"
 	
@@ -245,7 +250,7 @@ function parse_mission_and_exec()
 	result=$(echo "$json_conf" | jq --arg v "$dur" '. + {"duration_sec": $v}')
 	mount $MNT_UBUNTU
 	echo "$result" > $CONF_FILE
-	echo "$result" > $RESULT_FILE
+	echo "$result" > "$CONF_PATH/.advRescue_""$mission""result.json"
 	
 	umount $MNT_UBUNTU
 	umount $MNT_STORAGE
@@ -281,7 +286,7 @@ echo "=== rescue begin ==="
 
 json_conf=$(get_mission)
 parse_mission_and_exec "$json_conf"
-grub_switch $DEV_UBUNTU "Ubuntu"
+#grub_switch $DEV_UBUNTU "Ubuntu"
 
 echo "=== rescue end ==="
 

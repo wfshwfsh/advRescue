@@ -335,7 +335,7 @@ create_livefs() {
 	#
 	echo -e "$yel* Preparing image...$off"
 	rm -f $ROOT/root/.bash_history
-	rm -rf image redorescue-$VER.iso
+	rm -rf image advRescue.iso
 	mkdir -p image/live
 
 	# Apply changes from overlay
@@ -417,16 +417,16 @@ create_legacy_iso() {
 		-J -joliet-long \
 		-isohybrid-mbr /usr/lib/ISOLINUX/isohdpfx.bin \
 		-partition_offset 16 \
-		-A "Redo $VER" -volid "Redo Rescue $VER" \
+		-A "Redo $VER" -volid "Adv Rescue" \
 		-b isolinux/isolinux.bin \
 		-c isolinux/boot.cat \
 		-no-emul-boot -boot-load-size 4 -boot-info-table \
-		-o redorescue-$VER.iso \
+		-o advRescue.iso \
 		image
 
 	# Report final ISO size
 	echo -e "$yel\nISO image saved:"
-	du -sh redorescue-$VER.iso
+	du -sh edvRescue.iso
 	echo -e "$off"
 	echo
 	echo "Done."
@@ -489,7 +489,7 @@ create_uefi_iso() {
 		-iso-level 3 \
 		-full-iso9660-filenames \
 		-joliet-long \
-		-volid "Redo Rescue $VER" \
+		-volid "Adv Rescue" \
 		-eltorito-boot \
 			boot/grub/bios.img \
 			-no-emul-boot \
@@ -502,7 +502,7 @@ create_uefi_iso() {
 			-e EFI/efiboot.img \
 			-no-emul-boot \
 		-append_partition 2 0xef scratch/efiboot.img \
-		-output redorescue-$VER.iso \
+		-output advRescue.iso \
 		-graft-points \
 			image \
 			/boot/grub/bios.img=scratch/bios.img \
@@ -513,7 +513,7 @@ create_uefi_iso() {
 
 	# Report final ISO size
 	echo -e "$yel\nISO image saved:"
-	du -sh redorescue-$VER.iso
+	du -sh advRescue.iso
 	echo -e "$off"
 	echo
 	echo "Done."
