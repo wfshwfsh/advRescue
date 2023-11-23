@@ -173,6 +173,8 @@ apt install --no-install-recommends --yes \
 	nginx php-fpm php-cli chromium $PKGS \
 	jq at-spi2-core 
 
+#apt install libwebkit2gtk-4.0-dev 
+
 # Modify /etc/issue banner
 perl -p -i -e 's/^D/Redo Rescue $VER\nBased on D/' /etc/issue
 

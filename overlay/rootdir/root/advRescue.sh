@@ -16,6 +16,12 @@ CONF_FILE="$CONF_PATH/.rescue_mission.json"
 
 
 ##### backup #####
+function clean_exist_img_files()
+{
+	rm -f $storage/en64_mbr.txt
+	rm -f $storage/en64_sfdata.txt
+	rm -f $storage/*.img
+}
 
 function fetch_mbr()
 {
@@ -220,14 +226,28 @@ function parse_mission_and_exec()
 	echo "state: $state"
 	echo "Timestamp: $ts"
 	
+	local RESULT_FILE="$CONF_PATH/.advRescue_""$mission"_result.json
+
+
 	#Checking Params 
-	if [ "restore" != "$mission" || "backup" != "$mission"]; then
+	if [ "restore" != "$mission" ] && [ "backup" != "$mission" ]; then
 		return -1
+	elif [ "Accept" != "$state" ]; then
+		return -2
+	else
+		#update state
+		local update=$(echo "$json_conf" | jq --arg k "state" --arg v "Processing" '.[$k] = $v')
+		echo "$update" > $RESULT_FILE
 	fi
 
 
         mkdir -p $MNT_STORAGE
         mount "/dev/$storage" $MNT_STORAGE
+
+	# remove existed backup files
+	if [ "backup" != "$mission" ]; then
+		clean_exist_img_files
+	fi
 
 	# system disk info backup/restore
 	exec_init "$mission" "$disk"
@@ -244,14 +264,19 @@ function parse_mission_and_exec()
 		exec_partclone "$mission" "$type" "$diskpart" "$fs" "$MNT_STORAGE"
 	done
 	
-	# add result tag
+	# Adding Duration Time, update State
 	local end_time=$(date +%s)
 	local dur=$((end_time - start_time))
-	result=$(echo "$json_conf" | jq --arg v "$dur" '. + {"duration_sec": $v}')
-	mount $MNT_UBUNTU
-	echo "$result" > $CONF_FILE
-	echo "$result" > "$CONF_PATH/.advRescue_""$mission""result.json"
+	update=$(echo "$update" | jq --arg v "$dur" '. + {"duration_sec": $v}')
+	update=$(echo "$update" | jq --arg k "state" --arg v "Done" '.[$k] = $v')
+
+	mount $DEV_UBUNTU $MNT_UBUNTU
+	#echo "$update" > $CONF_FILE
+	echo "$update" > $RESULT_FILE
 	
+	# Remove mission conf file
+	rm -f $CONF_FILE
+
 	umount $MNT_UBUNTU
 	umount $MNT_STORAGE
 }
