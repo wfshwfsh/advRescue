@@ -32,4 +32,4 @@ xhost si:localuser:redo &
 #( sleep 1 && sudo -u redo chromium --start-maximized --app=http://localhost ) &
 
 # Launch Terminal and do something
-( sleep 1 && lxterminal -e "/root/advRescue.sh; sleep 5" ) &
+( sleep 1 && lxterminal -e "/root/advRescue.sh; sleep 5; reboot" ) &

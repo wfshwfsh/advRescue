@@ -169,9 +169,9 @@ apt install --no-install-recommends --yes \
 	dosfstools ntfs-3g reiserfsprogs reiser4progs hfsutils jfsutils \
 	smbclient cifs-utils nfs-common curlftpfs sshfs partclone pigz yad \
 	f2fs-tools exfat-fuse exfat-utils btrfs-progs \
-	\
-	nginx php-fpm php-cli chromium $PKGS \
-	jq at-spi2-core 
+	chromium \
+	jq at-spi2-core \
+	#nginx php-fpm php-cli $PKGS
 
 #apt install libwebkit2gtk-4.0-dev 
 
@@ -207,30 +207,30 @@ echo 'root:$USER' | chpasswd
 echo 'default_user root' >> /etc/slim.conf
 echo 'auto_login yes' >> /etc/slim.conf
 echo "Setting default plymouth theme..."
-plymouth-set-default-theme -R redo
+#plymouth-set-default-theme -R redo
 update-initramfs -u
 ln -s /usr/bin/pcmanfm /usr/bin/nautilus
 
-# Configure nginx/php-fpm application server
-perl -p -i -e 's/^user = .*$/user = root/g' /etc/php/$PHPV/fpm/pool.d/www.conf
-perl -p -i -e 's/^group = .*$/group = root/g' /etc/php/$PHPV/fpm/pool.d/www.conf
-perl -p -i -e 's/^ExecStart=(.*)$/ExecStart=\$1 -R/g' /lib/systemd/system/php$PHPV-fpm.service
-cat > /etc/nginx/sites-available/redo <<'END'
-server {
-	listen		80 default_server;
-	server_name	localhost;
-	root		/var/www/html;
-	index		index.php;
-	location ~* \.php$ {
-		fastcgi_pass	unix:/run/php/php$PHPV-fpm.sock;
-		include		fastcgi_params;
-		fastcgi_param	SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
-		fastcgi_param	SCRIPT_NAME \$fastcgi_script_name;
-	}
-}
+## Configure nginx/php-fpm application server
+#perl -p -i -e 's/^user = .*$/user = root/g' /etc/php/$PHPV/fpm/pool.d/www.conf
+#perl -p -i -e 's/^group = .*$/group = root/g' /etc/php/$PHPV/fpm/pool.d/www.conf
+#perl -p -i -e 's/^ExecStart=(.*)$/ExecStart=\$1 -R/g' /lib/systemd/system/php$PHPV-fpm.service
+#cat > /etc/nginx/sites-available/redo <<'END'
+#server {
+#	listen		80 default_server;
+#	server_name	localhost;
+#	root		/var/www/html;
+#	index		index.php;
+#	location ~* \.php$ {
+#		fastcgi_pass	unix:/run/php/php$PHPV-fpm.sock;
+#		include		fastcgi_params;
+#		fastcgi_param	SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
+#		fastcgi_param	SCRIPT_NAME \$fastcgi_script_name;
+#	}
+#}
 END
-rm -f /etc/nginx/sites-enabled/default
-ln -s /etc/nginx/sites-available/redo /etc/nginx/sites-enabled/
+#rm -f /etc/nginx/sites-enabled/default
+#ln -s /etc/nginx/sites-available/redo /etc/nginx/sites-enabled/
 EOL
 }
 
@@ -348,7 +348,7 @@ create_livefs() {
 
 	# Fix permissions
 	chroot $ROOT/ /bin/bash -c "chown -R root: /etc /root"
-	chroot $ROOT/ /bin/bash -c "chown -R www-data: /var/www/html"
+	#chroot $ROOT/ /bin/bash -c "chown -R www-data: /var/www/html"
 
 	# Enable startup of Redo monitor service
 	#chroot $ROOT/ /bin/bash -c "chmod 644 /etc/systemd/system/redo.service"
