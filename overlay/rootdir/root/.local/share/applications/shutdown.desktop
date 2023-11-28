@@ -6,3 +6,4 @@ Comment=Power off system
 Categories=Utility;
 Icon=system-shutdown-symbolic
 Keywords=system;shutdown;power;
+NoDisplay=true

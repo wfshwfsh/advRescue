@@ -7,3 +7,4 @@ Categories=Utility;
 Icon=redo-icon
 Keywords=system;backup;restore;
 StartupNotify=false
+NoDisplay=true
