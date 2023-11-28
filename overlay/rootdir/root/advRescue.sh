@@ -229,7 +229,7 @@ function parse_mission_and_exec()
 	local RESULT_FILE="$CONF_PATH/.advRescue_""$mission"_result.json
 
 
-	#Checking Params 
+	# Checking Params 
 	if [ "restore" != "$mission" ] && [ "backup" != "$mission" ]; then
 		return -1
 	elif [ "Accept" != "$state" ]; then
@@ -267,7 +267,7 @@ function parse_mission_and_exec()
 	# Adding Duration Time, update State
 	local end_time=$(date +%s)
 	local dur=$((end_time - start_time))
-	update=$(echo "$update" | jq --arg v "$dur" '. + {"duration_sec": $v}')
+	update=$(echo "$update" | jq --arg v $dur '. + {"duration_sec": $v}')
 	update=$(echo "$update" | jq --arg k "state" --arg v "Done" '.[$k] = $v')
 
 	mount $DEV_UBUNTU $MNT_UBUNTU
@@ -312,6 +312,7 @@ echo "=== rescue begin ==="
 json_conf=$(get_mission)
 parse_mission_and_exec "$json_conf"
 #grub_switch $DEV_UBUNTU "Ubuntu"
+##### reboot
 
 echo "=== rescue end ==="
 
