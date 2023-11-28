@@ -144,12 +144,11 @@ launcher_icon_theme = Adwaita
 launcher_icon_theme_override = 0
 startup_notifications = 1
 launcher_tooltip = 1
-launcher_item_app = xfce4-appfinder.desktop
+#launcher_item_app = xfce4-appfinder.desktop
 #launcher_item_app = redo.desktop
 #launcher_item_app = chromium.desktop
 #launcher_item_app = pcmanfm.desktop
 #launcher_item_app = shutdown.desktop
-launcher_item_app = reboot.desktop
 
 #-------------------------------------
 # Clock

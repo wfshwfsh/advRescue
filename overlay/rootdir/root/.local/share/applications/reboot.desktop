@@ -1,8 +1,0 @@
-[Reboot Entry]
-Type=Application
-Exec=/sbin/reboot
-Name=Reboot
-Comment=Reboot system
-Categories=Utility;
-Icon=system-shutdown-symbolic
-Keywords=system;reboot;power;
