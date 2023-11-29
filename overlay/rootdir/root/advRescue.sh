@@ -76,6 +76,23 @@ function update_diskpart()
     partprobe "/dev/$dsik"
 }
 
+
+function disable_kb()
+{
+    #disable Ctrl_L, Ctrl_R, Alt_L, Alt_R
+    xmodmap -e "keycode 37 = NoSymbol"
+    xmodmap -e "keycode 105 = NoSymbol"
+    xmodmap -e "keycode 64 = NoSymbol"
+    xmodmap -e "keycode 108 = NoSymbol"
+}
+
+function disable_mouse()
+{
+    #disable Right click, Left click
+    xmodmap -e "pointer = 0 2 0 4 5 6 7 8 9"
+}
+
+###################
 # system mbr or disk partition info
 function exec_init()
 {
@@ -235,6 +252,10 @@ function parse_mission_and_exec()
 	elif [ "Accept" != "$state" ]; then
 		return -2
 	else
+		#Disable Keyboard & mouse Specific key
+		disable_kb
+		disable_mouse
+
 		#update state
 		local update=$(echo "$json_conf" | jq --arg k "state" --arg v "Processing" '.[$k] = $v')
 		echo "$update" > $RESULT_FILE
