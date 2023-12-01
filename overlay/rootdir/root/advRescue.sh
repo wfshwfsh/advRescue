@@ -10,8 +10,9 @@ MNT_UBUNTU="/mnt/ubuntu"
 MNT_STORAGE="/mnt/storage"
 
 
-CONF_PATH="/mnt/ubuntu/var/tmp_adv"
+CONF_PATH="$MNT_UBUNTU/var/tmp_adv"
 CONF_FILE="$CONF_PATH/.rescue_mission.json"
+RESULT_PATH="$MNT_STORAGE"
 #CONF_FILE=".rescue_mission.conf"
 
 
@@ -243,7 +244,7 @@ function parse_mission_and_exec()
 	echo "state: $state"
 	echo "Timestamp: $start_ts"
 
-	local RESULT_FILE="$CONF_PATH/.advRescue_""$mission"_result.json
+	local RESULT_FILE="$RESULT_PATH/.advRescue_""$mission"_result.json
 
 	mount $DEV_UBUNTU $MNT_UBUNTU
 	# Checking Params
@@ -260,7 +261,7 @@ function parse_mission_and_exec()
 		local update=$(echo "$json_conf" | jq --arg k "state" --arg v "Processing" '.[$k] = $v')
 		echo "$update" > $RESULT_FILE
 	fi
-
+	umount $MNT_UBUNTU
 
 	mkdir -p $MNT_STORAGE
 	mount "/dev/$storage" $MNT_STORAGE
@@ -270,6 +271,8 @@ function parse_mission_and_exec()
 		clean_exist_img_files
 	fi
 
+	#####################################################
+	# WARNING: DO NOT MOUNT UBUNTU DISK WHEN DOING BACKUP/RESTORE 
 	# system disk info backup/restore
 	exec_init "$mission" "$disk"
 
@@ -293,7 +296,9 @@ function parse_mission_and_exec()
 	finish_ts=$(date -d "@$sec_finish_ts" +"%Y-%m-%d %H:%M:%S")
 	update=$(echo "$update" | jq --arg v "$finish_ts" '. + {"finish_ts": $v}')
 	update=$(echo "$update" | jq --arg k "state" --arg v "Done" '.[$k] = $v')
+	######################################################
 
+	mount $DEV_UBUNTU $MNT_UBUNTU
 	#echo "$update" > $CONF_FILE
 	echo "$update" > $RESULT_FILE
 
