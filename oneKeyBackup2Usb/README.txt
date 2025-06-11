@@ -1,4 +1,4 @@
 apt install jq dialog
 
 Usage:
-sudo ./test.sh rescue.iso
+sudo ./test.sh <path2rescue.iso>
